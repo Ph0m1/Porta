@@ -10,10 +10,10 @@ type EntityFormatter interface {
 type propertyFilter func(entity *Response)
 
 type entityFilter struct {
-	Target string
-	Prefix string
+	Target         string
+	Prefix         string
 	PropertyFilter propertyFilter
-	Mapping map[string]string
+	Mapping        map[string]string
 }
 
 // NewEntityFormatter creates an entity formatter with the received params
@@ -44,31 +44,31 @@ func newWhitelistingFilter(whitelist []string) propertyFilter {
 			wl[keys[0]] = tmp
 		}
 	}
-	return func(entity *Response){
+	return func(entity *Response) {
 		accumulator := make(map[string]interface{}, len(whitelist))
-		for k,v := range entity.Data{
-			if sub, ok := wl[k]; ok{
-				if len(sub) > 0{
-					if tmp:=whitelistFilterSub(v,sub); len(tmp) > 0{
+		for k, v := range entity.Data {
+			if sub, ok := wl[k]; ok {
+				if len(sub) > 0 {
+					if tmp := whitelistFilterSub(v, sub); len(tmp) > 0 {
 						accumulator[k] = tmp
 					}
-				}else{
+				} else {
 					accumulator[k] = v
 				}
 			}
 		}
-		*entity = Response{accumulator,entity.IsComplete}
+		*entity = Response{accumulator, entity.IsComplete}
 	}
 }
 
 func whitelistFilterSub(v interface{}, whitelist map[string]interface{}) map[string]interface{} {
 	entity, ok := v.(map[string]interface{})
-	if !ok{
+	if !ok {
 		return map[string]interface{}{}
 	}
 	tmp := make(map[string]interface{}, len(whitelist))
-	for k,v := range entity{
-		if _, ok := whitelist[k]; ok{
+	for k, v := range entity {
+		if _, ok := whitelist[k]; ok {
 			tmp[k] = v
 		}
 	}
@@ -76,3 +76,39 @@ func whitelistFilterSub(v interface{}, whitelist map[string]interface{}) map[str
 }
 
 func newBlacklistingFilter(blacklist []string) propertyFilter {
+	bl := make(map[string][]string, len(blacklist))
+	for _, key := range blacklist {
+		keys := strings.Split(key, ".")
+		if len(keys) > 1 {
+			if sub, ok := bl[keys[0]]; ok {
+				bl[keys[0]] = append(sub, keys[1])
+			} else {
+				bl[keys[0]] = []string{keys[1]}
+			}
+		} else {
+			bl[keys[0]] = []string{}
+		}
+	}
+	return func(entity *Response) {
+		for k, sub := range bl {
+			if len(sub) == 0 {
+				delete(entity.Data, k)
+			} else {
+				if tmp := blacklistFilterSub(entity.Data[k], sub); len(tmp) > 0 {
+					entity.Data[k] = tmp
+				}
+			}
+		}
+	}
+}
+
+func blacklistFilterSub(v interface{}, blacklist []string) map[string]interface{} {
+	tmp, ok := v.(map[string]interface{})
+	if !ok {
+		return map[string]interface{}{}
+	}
+	for _, key := range blacklist {
+		delete(tmp, key)
+	}
+	return tmp
+}

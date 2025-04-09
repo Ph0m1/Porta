@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/ph0m1/p_gateway/config"
 )
 
@@ -20,7 +19,7 @@ var (
 	ErrNotEnoughProxies = errors.New("not enough proxies for this endpoint")
 )
 
-type Proxy func(ctx gin.Context, request *Request) (*Response, error)
+type Proxy func(ctx context.Context, request *Request) (*Response, error)
 
 type BackendFactory func(remote config.Backend) Proxy
 type Middleware func(next ...Proxy) Proxy
@@ -32,4 +31,4 @@ func EmptyMiddleware(next ...Proxy) Proxy {
 	return next[0]
 }
 
-func NoopProxy(_ context.Context, _ *Request) Proxy
+func NoopProxy(_ context.Context, _ *Request) (*Response, error) { return nil, nil }

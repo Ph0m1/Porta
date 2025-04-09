@@ -4,12 +4,12 @@ import "strings"
 
 // EntityFormatter formats the response data
 type EntityFormatter interface {
-	Format(entity Request) Response
+	Format(entity Response) Response
 }
 
 type propertyFilter func(entity *Response)
 
-type entityFilter struct {
+type entityFormatter struct {
 	Target         string
 	Prefix         string
 	PropertyFilter propertyFilter
@@ -21,6 +21,52 @@ func NewEntityFormatter(target string, whitelist, blacklist []string, group stri
 	var propertyFilter propertyFilter
 	if len(whitelist) > 0 {
 		propertyFilter = newWhitelistingFilter(whitelist)
+	} else {
+		propertyFilter = newBlacklistingFilter(blacklist)
+	}
+	sanitizedMappings := make(map[string]string, len(mappings))
+	for i, m := range mappings {
+		v := strings.Split(m, ".")
+		sanitizedMappings[i] = v[0]
+	}
+
+	return entityFormatter{
+		Target:         target,
+		Prefix:         group,
+		PropertyFilter: propertyFilter,
+		Mapping:        mappings,
+	}
+}
+
+func (e entityFormatter) Format(entity Response) Response {
+	if e.Target != "" {
+		extractTarget(e.Target, &entity)
+	}
+	if len(entity.Data) > 0 {
+		e.PropertyFilter(&entity)
+	}
+	if len(entity.Data) > 0 {
+		for formerKey, newKey := range e.Mapping {
+			if v, ok := entity.Data[formerKey]; ok {
+				entity.Data[newKey] = v
+				delete(entity.Data, formerKey)
+			}
+		}
+	}
+	if e.Prefix != "" {
+		entity.Data = map[string]interface{}{e.Prefix: entity.Data}
+	}
+	return entity
+}
+
+func extractTarget(target string, entity *Response) {
+	if tmp, ok := entity.Data[target]; ok {
+		entity.Data, ok = tmp.(map[string]interface{})
+		if !ok {
+			entity.Data = map[string]interface{}{}
+		}
+	} else {
+		entity.Data = map[string]interface{}{}
 	}
 }
 

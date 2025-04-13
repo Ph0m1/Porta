@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"context"
 	"github.com/ph0m1/p_gateway/config"
 	"github.com/ph0m1/p_gateway/logging"
 )
@@ -38,13 +37,22 @@ func (pf defaultFactory) newMulti(cfg *config.EndpointConfig) (p Proxy, err erro
 
 	for i, backend := range cfg.Backend {
 		backendProxy[i] = pf.backendFactory(backend)
+		backendProxy[i] = NewRoundRobinLoadBalancedMiddleware(backend)(backendProxy[i])
+		if backend.ConcurrentCalls > 1 {
+			backendProxy[i] = NewConcurrentMiddleware(backend)(backendProxy[i])
+		}
+		backendProxy[i] = NewRequestBuilderMiuddleware(backend)(backendProxy[i])
 	}
+	p = NewMergeDataMiddleware(cfg)(backendProxy...)
 	return
 }
 
-func (pf defaultFactory) newSingle() {
-
-}
-func (pf defaultFactory) newProxy() {
-
+func (pf defaultFactory) newSingle(cfg *config.EndpointConfig) (p Proxy, err error) {
+	p = pf.backendFactory(cfg.Backend[0])
+	p = NewRoundRobinLoadBalancedMiddleware(cfg.Backend[0])(p)
+	if cfg.Backend[0].ConcurrentCalls > 1 {
+		p = NewConcurrentMiddleware(cfg.Backend[0])(p)
+	}
+	p = NewRequestBuilderMiuddleware(cfg.Backend[0])(p)
+	return
 }

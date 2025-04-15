@@ -176,8 +176,8 @@ func (s *ServiceConfig) initBackendURLMappings(e, b int, inputParams map[string]
 	outputParams := s.extractPlaceHoldersFromURLTemplate(backend.URLPattern, simpleURLKeysPattern)
 
 	outputSet := map[string]interface{}{}
-	for _, op := range outputParams {
-		outputSet[op] = nil
+	for op := range outputParams {
+		outputSet[outputParams[op]] = nil
 	}
 
 	if len(outputSet) > len(inputParams) {

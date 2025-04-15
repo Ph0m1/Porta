@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "host": ["http://localhost", "http://localhost:8080"],
+  "port": 8080,
+  "timeout": "5s",
+  "cache_ttl": "60s",
+  "endpoints": [
+    {
+      "endpoint": "/user/{id}",
+      "method": "GET",
+      "concurrent_calls": 2,
+      "querystring_params": ["fields", "expand"],
+      "backend": [
+        {
+          "group": "user_data",
+          "method": "GET",
+          "host": ["http://user-service.internal"],
+          "url_pattern": "/api/users/{id}",
+          "whitelist": ["1", "name", "email"],
+          "mapping": {
+            "email": "contact_email"
+          },
+          "encoding": "json",
+          "target": "profile"
+        }
+      ]
+    },
+    {
+      "endpoint": "/products/{productId}",
+      "method": "POST",
+      "timeout": "2s",
+      "backend": [
+        {
+          "url_pattern": "/inventory/{productId}",
+          "host": ["http://inventory-service.internal:3000"],
+          "blacklist": ["internal_id"],
+          "concurrent_calls": 3
+        }
+
+      ]
+    }
+  ]
+}

@@ -7,12 +7,12 @@ import (
 )
 
 type Request struct {
-	Method string
-	URL *url.URL
-	Query url.Values
-	Path string
-	Body io.ReadCloser
-	Params map[string]string
+	Method  string
+	URL     *url.URL
+	Query   url.Values
+	Path    string
+	Body    io.ReadCloser
+	Params  map[string]string
 	Headers map[string][]string
 }
 
@@ -23,25 +23,25 @@ func (r *Request) GeneratePath(URLPattern string) {
 		return
 	}
 	buff := []byte(URLPattern)
-	for k,v := range r.Params {
+	for k, v := range r.Params {
 		key := []byte{}
 		key = append(key, "{{."...)
 		key = append(key, k...)
-		key = append(key, "}}"...)'
-		buff = bytes.Replace(buff,key,[]byte(v),-1)
+		key = append(key, "}}"...)
+		buff = bytes.Replace(buff, key, []byte(v), -1)
 	}
 	r.Path = string(buff)
 }
 
 // Clone clones itself into a new request
-func(r *Request) Clone()Request {
+func (r *Request) Clone() Request {
 	return Request{
-		Method: r.Method,
-		URL: r.URL,
-		Query: r.Query,
-		Path: r.Path,
-		Body: r.Body,
-		Params: r.Params,
+		Method:  r.Method,
+		URL:     r.URL,
+		Query:   r.Query,
+		Path:    r.Path,
+		Body:    r.Body,
+		Params:  r.Params,
 		Headers: r.Headers,
 	}
 }

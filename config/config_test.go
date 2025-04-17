@@ -185,3 +185,26 @@ func TestConfig_initBackendURLMappings_undefinedOutput(t *testing.T) {
 		t.Errorf("Error expected: %v\n", err.Error())
 	}
 }
+
+func TestEndpointWithNilQueryString(t *testing.T) {
+	cfg := &ServiceConfig{
+		Version: 1,
+		
+		Endpoints: []*EndpointConfig{
+			{
+				Endpoint: "/test",
+				Method:   "GET",
+				Backend:  []*Backend{{Host: []string{"http://localhost"}}},
+			},
+		},
+	}
+
+	err := cfg.Init()
+	if err != nil {
+		t.Fatalf("Initialization failed: %v", err)
+	}
+
+	if cfg.Endpoints[0].QueryString == nil {
+		t.Error("QueryString should be initialized as empty slice")
+	}
+}

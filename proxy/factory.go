@@ -27,7 +27,9 @@ func (pf defaultFactory) New(cfg *config.EndpointConfig) (p Proxy, err error) {
 	case 0:
 		err = ErrNoBackends
 	case 1:
-
+		p, err = pf.newSingle(cfg)
+	default:
+		p, err = pf.newMulti(cfg)
 	}
 	return
 }
@@ -41,7 +43,7 @@ func (pf defaultFactory) newMulti(cfg *config.EndpointConfig) (p Proxy, err erro
 		if backend.ConcurrentCalls > 1 {
 			backendProxy[i] = NewConcurrentMiddleware(backend)(backendProxy[i])
 		}
-		backendProxy[i] = NewRequestBuilderMiuddleware(backend)(backendProxy[i])
+		backendProxy[i] = NewRequestBuilderMiddleware(backend)(backendProxy[i])
 	}
 	p = NewMergeDataMiddleware(cfg)(backendProxy...)
 	return
@@ -53,6 +55,6 @@ func (pf defaultFactory) newSingle(cfg *config.EndpointConfig) (p Proxy, err err
 	if cfg.Backend[0].ConcurrentCalls > 1 {
 		p = NewConcurrentMiddleware(cfg.Backend[0])(p)
 	}
-	p = NewRequestBuilderMiuddleware(cfg.Backend[0])(p)
+	p = NewRequestBuilderMiddleware(cfg.Backend[0])(p)
 	return
 }

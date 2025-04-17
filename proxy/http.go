@@ -20,7 +20,7 @@ func httpProxy(backend *config.Backend) Proxy {
 	return NewHttpProxy(backend, NewHttpClient, backend.Decoder)
 }
 
-func NewRequestBuilderMiuddleware(remote *config.Backend) Middleware {
+func NewRequestBuilderMiddleware(remote *config.Backend) Middleware {
 	return func(next ...Proxy) Proxy {
 		if len(next) > 1 {
 			panic(ErrTooManyProxies)

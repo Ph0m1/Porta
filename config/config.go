@@ -139,7 +139,10 @@ func (s *ServiceConfig) initEndpointDefaults(e int) {
 	} else {
 		endpoint.Method = strings.ToTitle(endpoint.Method)
 	}
-	if s.CacheTTL != 0 && endpoint.Timeout == 0 {
+	if s.CacheTTL != 0 && endpoint.CacheTTL == 0 {
+		endpoint.CacheTTL = s.CacheTTL
+	}
+	if s.Timeout != 0 && endpoint.Timeout == 0 {
 		endpoint.Timeout = s.Timeout
 	}
 	if endpoint.ConcurrentCalls == 0 {
@@ -236,15 +239,12 @@ func (e *EndpointConfig) validate() error {
 		return err
 	}
 	if matched {
-		return fmt.Errorf("ERROR: the endpoint url path [%s] is not valid one!!! Ignoring\n", e.Endpoint)
-	}
-
-	if !strings.HasPrefix(e.Endpoint, "/") {
-		return fmt.Errorf("ERROR: the endpoint url path [%s] must start with /", e.Endpoint)
+		return fmt.Errorf("ERROR: the endpoint url path [%s] is not a valid one!!! Ignoring\n", e.Endpoint)
 	}
 
 	if len(e.Backend) == 0 {
-		return fmt.Errorf("ERROR: the [%s] endpoint has 0 backends defined! Ignoring\n", e.Endpoint)
+		return fmt.Errorf("WARNING: the [%s] endpoint has 0 backends defined! Ignoring\n", e.Endpoint)
 	}
+
 	return nil
 }

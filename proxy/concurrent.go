@@ -26,6 +26,7 @@ func NewConcurrentMiddleware(remote *config.Backend) Middleware {
 			for i := 0; i < remote.ConcurrentCalls; i++ {
 				go processConcurrentCall(localCtx, next[0], request, results, failed)
 			}
+
 			var response *Response
 			var err error
 
@@ -56,7 +57,7 @@ func processConcurrentCall(ctx context.Context, next Proxy, request *Request, ou
 		return
 	}
 	if result == nil {
-		failed <- err
+		failed <- errNullResult
 		cancel()
 		return
 	}

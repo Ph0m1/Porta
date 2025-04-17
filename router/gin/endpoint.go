@@ -42,6 +42,7 @@ func EndpointHandler(cfg *config.EndpointConfig, proxy proxy.Proxy) gin.HandlerF
 			c.Header("Cache-Control", fmt.Sprintf("public, max-age=%d", int(cfg.CacheTTL.Seconds())))
 			c.JSON(http.StatusOK, response.Data)
 			cancel()
+			return
 		}
 		c.JSON(http.StatusOK, gin.H{})
 		cancel()
@@ -62,7 +63,6 @@ func NewRequest(c *gin.Context, queryString []string) *proxy.Request {
 	headers := make(map[string][]string, 2+len(headersToSend))
 	headers["X-Forwarded-For"] = []string{c.ClientIP()}
 	headers["User-Agent"] = userAgentHeaderValue
-
 	for _, k := range headersToSend {
 		if h, ok := c.Request.Header[k]; ok {
 			headers[k] = h

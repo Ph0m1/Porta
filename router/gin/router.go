@@ -11,71 +11,91 @@ import (
 	"github.com/ph0m1/p_gateway/router"
 )
 
+type Config struct {
+	Engine         *gin.Engine
+	Middlewares    []gin.HandlerFunc
+	HandlerFactory HandlerFactory
+	ProxyFactory   proxy.Factory
+	Logger         logging.Logger
+}
+
 func DefaultFactory(pf proxy.Factory, logger logging.Logger) router.Factory {
-	return factory{pf, logger}
+	return factory{
+		Config{
+			Engine:         gin.Default(),
+			Middlewares:    []gin.HandlerFunc{},
+			HandlerFactory: EndpointHandler,
+			ProxyFactory:   pf,
+			Logger:         logger,
+		},
+	}
+}
+
+func NewFactory(cfg Config) router.Factory {
+	return factory{cfg}
 }
 
 type factory struct {
-	pf     proxy.Factory
-	logger logging.Logger
+	cfg Config
 }
 
 func (rf factory) New() router.Router {
-	return ginRouter{rf.pf, rf.logger}
+	return ginRouter{rf.cfg}
 }
 
 type ginRouter struct {
-	pf     proxy.Factory
-	logger logging.Logger
+	cfg Config
 }
 
 func (r ginRouter) Run(cfg config.ServiceConfig) {
 	if !cfg.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
-		r.logger.Debug("Debug enabled")
+		r.cfg.Logger.Debug("Debug enabled")
 	}
 	engine := gin.Default()
 
-	engine.RedirectTrailingSlash = true
-	engine.RedirectFixedPath = true
-	engine.HandleMethodNotAllowed = true
+	r.cfg.Engine.RedirectTrailingSlash = true
+	r.cfg.Engine.RedirectFixedPath = true
+	r.cfg.Engine.HandleMethodNotAllowed = true
+
+	r.cfg.Engine.Use(r.cfg.Middlewares...)
 
 	for _, c := range cfg.Endpoints {
-		proxyStack, err := r.pf.New(c)
+		proxyStack, err := r.cfg.ProxyFactory.New(c)
 		if err != nil {
-			r.logger.Error("calling the ProxyFactory", err.Error())
+			r.cfg.Logger.Error("calling the ProxyFactory", err.Error())
 			continue
 		}
-		handler := EndpointHandler(c, proxyStack)
+		handler := r.cfg.HandlerFactory(c, proxyStack)
 		// add endpoint middleware components here:
 		// logs, metrics, throttling, 3rd party integrations...
 		// there are several in the package gin-gonic/gin and in the golang community
 
 		switch c.Method {
 		case "GET":
-			engine.GET(c.Endpoint, handler)
+			r.cfg.Engine.GET(c.Endpoint, handler)
 		case "POST":
 			if len(c.Backend) > 1 {
-				r.logger.Error("POST endpoints must have a single backend! Ignoring", c.Endpoint)
+				r.cfg.Logger.Error("POST endpoints must have a single backend! Ignoring", c.Endpoint)
 				continue
 			}
 			engine.POST(c.Endpoint, handler)
 		case "PUT":
 			if len(c.Backend) > 1 {
-				r.logger.Error("PUT endpoints must have a single backend! Ignoring", c.Endpoint)
+				r.cfg.Logger.Error("PUT endpoints must have a single backend! Ignoring", c.Endpoint)
 				continue
 			}
-			engine.PUT(c.Endpoint, handler)
+			r.cfg.Engine.PUT(c.Endpoint, handler)
 		default:
-			r.logger.Error("Unsupported method", c.Method)
+			r.cfg.Logger.Error("Unsupported method", c.Method)
 		}
 	}
 	if cfg.Debug {
-		handler := DebugHandler(r.logger)
-		engine.GET("/__debug/*param", handler)
-		engine.POST("/__debug/*param", handler)
-		engine.PUT("/__debug/*param", handler)
+		handler := DebugHandler(r.cfg.Logger)
+		r.cfg.Engine.GET("/__debug/*param", handler)
+		r.cfg.Engine.POST("/__debug/*param", handler)
+		r.cfg.Engine.PUT("/__debug/*param", handler)
 	}
-	r.logger.Critical(engine.Run(fmt.Sprintf(":%d", cfg.Port)))
+	r.cfg.Logger.Critical(engine.Run(fmt.Sprintf(":%d", cfg.Port)))
 }

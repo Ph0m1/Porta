@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/ph0m1/p_gateway/config"
 	"github.com/ph0m1/p_gateway/proxy"
-	"github.com/ph0m1/p_gateway/router/gin"
 	"net/http"
 	"time"
 )

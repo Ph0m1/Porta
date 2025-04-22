@@ -53,7 +53,7 @@ func (r ginRouter) Run(cfg config.ServiceConfig) {
 	} else {
 		r.cfg.Logger.Debug("Debug enabled")
 	}
-	engine := gin.Default()
+	//engine := gin.Default()
 
 	r.cfg.Engine.RedirectTrailingSlash = true
 	r.cfg.Engine.RedirectFixedPath = true
@@ -61,41 +61,49 @@ func (r ginRouter) Run(cfg config.ServiceConfig) {
 
 	r.cfg.Engine.Use(r.cfg.Middlewares...)
 
-	for _, c := range cfg.Endpoints {
+	if cfg.Debug {
+		r.registerDebugEndpoints()
+	}
+	r.registerEndpoints(cfg.Endpoints)
+
+	r.cfg.Logger.Critical(r.cfg.Engine.Run(fmt.Sprintf(":%d", cfg.Port)))
+}
+
+func (r ginRouter) registerDebugEndpoints() {
+	handler := DebugHandler(r.cfg.Logger)
+	r.cfg.Engine.GET("/__debug/*param", handler)
+	r.cfg.Engine.POST("/__debug/*param", handler)
+	r.cfg.Engine.PUT("/__debug/*param", handler)
+}
+func (r ginRouter) registerEndpoints(endpoints []*config.EndpointConfig) {
+	for _, c := range endpoints {
 		proxyStack, err := r.cfg.ProxyFactory.New(c)
 		if err != nil {
 			r.cfg.Logger.Error("calling the ProxyFactory", err.Error())
 			continue
 		}
-		handler := r.cfg.HandlerFactory(c, proxyStack)
-		// add endpoint middleware components here:
-		// logs, metrics, throttling, 3rd party integrations...
-		// there are several in the package gin-gonic/gin and in the golang community
+		r.registerEndpoint(c.Method, c.Endpoint, r.cfg.HandlerFactory(c, proxyStack), len(c.Backend))
+	}
+}
 
-		switch c.Method {
-		case "GET":
-			r.cfg.Engine.GET(c.Endpoint, handler)
-		case "POST":
-			if len(c.Backend) > 1 {
-				r.cfg.Logger.Error("POST endpoints must have a single backend! Ignoring", c.Endpoint)
-				continue
-			}
-			engine.POST(c.Endpoint, handler)
-		case "PUT":
-			if len(c.Backend) > 1 {
-				r.cfg.Logger.Error("PUT endpoints must have a single backend! Ignoring", c.Endpoint)
-				continue
-			}
-			r.cfg.Engine.PUT(c.Endpoint, handler)
-		default:
-			r.cfg.Logger.Error("Unsupported method", c.Method)
-		}
+func (r ginRouter) registerEndpoint(method, path string, handler gin.HandlerFunc, toBackends int) {
+	if method != "GET" && toBackends > 1 {
+		r.cfg.Logger.Error(method, "endpoints must have a single backend! Ignoring", path)
+		return
 	}
-	if cfg.Debug {
-		handler := DebugHandler(r.cfg.Logger)
-		r.cfg.Engine.GET("/__debug/*param", handler)
-		r.cfg.Engine.POST("/__debug/*param", handler)
-		r.cfg.Engine.PUT("/__debug/*param", handler)
+	switch method {
+	case "GET":
+		r.cfg.Engine.GET(path, handler)
+	case "POST":
+		r.cfg.Engine.POST(path, handler)
+	case "PUT":
+		r.cfg.Engine.PUT(path, handler)
+	case "PATCH":
+		r.cfg.Engine.PATCH(path, handler)
+	case "DELETE":
+		r.cfg.Engine.DELETE(path, handler)
+
+	default:
+		r.cfg.Logger.Error("Unsupported method", method)
 	}
-	r.cfg.Logger.Critical(engine.Run(fmt.Sprintf(":%d", cfg.Port)))
 }

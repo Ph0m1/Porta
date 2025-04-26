@@ -13,6 +13,8 @@ import (
 
 var ErrInternalError = errors.New("internal server error")
 
+type HandlerFactory func(*config.EndpointConfig, proxy.Proxy) http.HandlerFunc
+
 func EndpointHandler(cfg *config.EndpointConfig, proxy proxy.Proxy) http.HandlerFunc {
 	endpointTimeout := time.Duration(cfg.Timeout) * time.Millisecond
 

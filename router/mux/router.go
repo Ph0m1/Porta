@@ -9,60 +9,91 @@ import (
 	"net/http"
 )
 
-func DefaultFactory(pf proxy.Factory, logger logging.Logger) router.Factory {
-	return factory{pf, logger}
+type factory struct {
+	cfg Config
 }
 
-type factory struct {
-	pf     proxy.Factory
-	logger logging.Logger
+type Config struct {
+	Engine         *http.ServeMux
+	Middlewares    []HandlerMiddleware
+	HandlerFactory HandlerFactory
+	ProxyFactory   proxy.Factory
+	Logger         logging.Logger
+}
+
+type HandlerMiddleware interface {
+	Handler(h http.Handler) http.Handler
+}
+
+func DefaultFactory(pf proxy.Factory, logger logging.Logger) router.Factory {
+	return factory{Config{Engine: http.NewServeMux(),
+		Middlewares:    []HandlerMiddleware{},
+		HandlerFactory: EndpointHandler,
+		ProxyFactory:   pf,
+		Logger:         logger,
+	}}
+}
+
+func NewFactory(cfg Config) router.Factory {
+	return factory{cfg}
 }
 
 func (rf factory) New() router.Router {
-	return httpRouter{rf.pf, rf.logger}
+	return httpRouter{rf.cfg}
 }
 
 type httpRouter struct {
-	pf     proxy.Factory
-	logger logging.Logger
+	cfg Config
 }
 
 func (r httpRouter) Run(cfg config.ServiceConfig) {
-	mux := http.NewServeMux()
-	for _, c := range cfg.Endpoints {
-		proxyStack, err := r.pf.New(c)
-		if err != nil {
-			r.logger.Error("calling the ProxyFactory", err.Error())
-			continue
-		}
-
-		switch c.Method {
-		case "GET":
-		case "POST":
-			if len(c.Backend) > 1 {
-				r.logger.Error("POST endpoints must have a single backend! Ignoring", c.Endpoint)
-				continue
-			}
-		case "PUT":
-			if len(c.Backend) > 1 {
-				r.logger.Error("PUT endpoints must have a single backend! Ignoring", c.Endpoint)
-				continue
-			}
-		default:
-			r.logger.Error("Unsupported method", c.Method)
-			continue
-		}
-		mux.Handle(c.Endpoint, EndpointHandler(c, proxyStack))
-	}
-
 	if cfg.Debug {
-		mux.Handle("/__debug/", DebugHandler(r.logger))
+		r.cfg.Engine.Handle("/__debug/", DebugHandler(r.cfg.Logger))
 	}
+	r.registerEndpoints(cfg.Endpoints)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: mux,
+		Handler: r.handler(),
 	}
-	r.logger.Critical(server.ListenAndServe())
+	r.cfg.Logger.Critical(server.ListenAndServe())
+}
+func (r httpRouter) registerEndpoints(endpoints []*config.EndpointConfig) {
+	for _, c := range endpoints {
+		proxyStack, err := r.cfg.ProxyFactory.New(c)
 
+		if err != nil {
+			r.cfg.Logger.Error("calling the ProxyFactory", err.Error())
+			continue
+		}
+
+		r.registerEndpoint(c.Method, c.Endpoint, r.cfg.HandlerFactory(c, proxyStack), len(c.Backend))
+	}
+}
+
+func (r httpRouter) registerEndpoint(method, path string, handler http.HandlerFunc, toBackends int) {
+	if method != "GET" && toBackends > 1 {
+		r.cfg.Logger.Error(method, "endpoints must have a single backend! Ignoring", path)
+		return
+	}
+	switch method {
+	case "GET":
+	case "POST":
+	case "PUT":
+	default:
+		r.cfg.Logger.Error("Unsupported method", method)
+		return
+	}
+	r.cfg.Logger.Debug("registering the endpoint", method, path)
+	r.cfg.Engine.Handle(path, handler)
+}
+
+func (r httpRouter) handler() http.Handler {
+	var handler http.Handler
+	handler = r.cfg.Engine
+	for _, middleware := range r.cfg.Middlewares {
+		r.cfg.Logger.Debug("Adding the middleware", middleware)
+		handler = middleware.Handler(handler)
+	}
+	return handler
 }

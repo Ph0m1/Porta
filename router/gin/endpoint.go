@@ -42,11 +42,12 @@ func EndpointHandler(cfg *config.EndpointConfig, proxy proxy.Proxy) gin.HandlerF
 
 		if cfg.CacheTTL.Seconds() != 0 && response != nil && response.IsComplete {
 			c.Header("Cache-Control", fmt.Sprintf("public, max-age=%d", int(cfg.CacheTTL.Seconds())))
-			c.JSON(http.StatusOK, response.Data)
-			cancel()
-			return
 		}
-		c.JSON(http.StatusOK, gin.H{})
+		if response != nil {
+			c.JSON(http.StatusOK, response.Data)
+		} else {
+			c.JSON(http.StatusOK, gin.H{})
+		}
 		cancel()
 	}
 }

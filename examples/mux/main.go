@@ -28,7 +28,10 @@ func main() {
 	if *port != 0 {
 		serviceConfig.Port = *port
 	}
-	logger := gologging.NewLogger(*logLevel, os.Stdout, "[O.o]")
+	logger, err := gologging.NewLogger(*logLevel, os.Stdout, "[O.o]")
+	if err != nil {
+		log.Fatal("ERROR:", err.Error())
+	}
 
 	routerFactory := mux.DefaultFactory(proxy.DefaultFactory(logger), logger)
 	routerFactory.New().Run(serviceConfig)

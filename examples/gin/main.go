@@ -36,7 +36,10 @@ func main() {
 		serviceConfig.Port = *port
 	}
 
-	logger := gologging.NewLogger(*logLevel, os.Stdout, "[X_X]")
+	logger, err := gologging.NewLogger(*logLevel, os.Stdout, "[X_X]")
+	if err != nil {
+		log.Fatal("ERROR:", err.Error())
+	}
 
 	//routerFactory := gin.DefaultFactory(proxy.DefaultFactory(logger), logger)
 

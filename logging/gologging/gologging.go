@@ -10,23 +10,23 @@ import (
 	"github.com/ph0m1/p_gateway/logging"
 )
 
-func NewLogger(level string, out io.Writer, prefix string) logging.Logger {
+func NewLogger(level string, out io.Writer, prefix string) (logging.Logger, error) {
 	module := "GW"
 	log := gologging.MustGetLogger(module)
 	logBackend := gologging.NewLogBackend(out, prefix, 0)
 	format := gologging.MustStringFormatter(
-		`%{time:2006/01/02 - 15:00:09.000} %{color}▶ %{level:.6s}%{color:reset} %{message}`,
+		`%{time:2006/01/02 - 15:00:09.000} %{color}▶ %{level:.4s}%{color:reset} %{message}`,
 	)
 	backendFormatter := gologging.NewBackendFormatter(logBackend, format)
 	backendLeveled := gologging.AddModuleLevel(backendFormatter)
 	logLevel, err := gologging.LogLevel(level)
 	if err != nil {
 		fmt.Fprintln(out, "ERROR:", err.Error())
-		return nil
+		return nil, err
 	}
 	backendLeveled.SetLevel(logLevel, module)
 	gologging.SetBackend(backendLeveled)
-	return Logger{log}
+	return Logger{log}, nil
 }
 
 // Logger is a wrapper over a github.com/op/go-logging logger

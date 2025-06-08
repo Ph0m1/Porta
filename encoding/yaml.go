@@ -5,4 +5,6 @@ import (
 	"io"
 )
 
-func YAMLDecoder(r io.Reader, v *map[string]interface{}) error { return yaml.NewDecoder(r).Decode(v) }
+func YAMLDecoder(r io.Reader, v *map[string]interface{}) error {
+	return yaml.NewDecoder(r).Decode(v)
+}

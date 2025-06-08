@@ -13,8 +13,10 @@ import (
 
 var ErrInternalError = errors.New("internal server error")
 
+// HandlerFactory creates a handler function that adapts the mux router with the injected proxy
 type HandlerFactory func(*config.EndpointConfig, proxy.Proxy) http.HandlerFunc
 
+// EndpointHandler creates a handler function that adapts the net/http mux router with the injected proxy
 func EndpointHandler(cfg *config.EndpointConfig, proxy proxy.Proxy) http.HandlerFunc {
 	endpointTimeout := time.Duration(cfg.Timeout) * time.Millisecond
 

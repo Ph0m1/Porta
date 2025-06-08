@@ -9,32 +9,55 @@ import (
 	"net/http"
 )
 
+const DefaultDebugPattern = "/__debug/"
+
+// Engine defines the minimum required interface for the mux compatible engine
+type Engine interface {
+	http.Handler
+	Handle(pattern string, handler http.Handler)
+}
+
+// DefaultEngine returns a new engine using the http.ServeMux router
+func DefaultEngine() *http.ServeMux {
+	return http.NewServeMux()
+}
+
 type factory struct {
 	cfg Config
 }
 
+// Config is the struct that collects the parts the router should be builded from
 type Config struct {
-	Engine         *http.ServeMux
+	Engine         Engine
 	Middlewares    []HandlerMiddleware
 	HandlerFactory HandlerFactory
 	ProxyFactory   proxy.Factory
 	Logger         logging.Logger
+	DebugPattern   string
 }
 
+// HandlerMiddleware is the interface for rhe decorators over the http.Handler
 type HandlerMiddleware interface {
 	Handler(h http.Handler) http.Handler
 }
 
+// DefaultFactory returns a net/http mux router factory with the injected proxy factory and logger
 func DefaultFactory(pf proxy.Factory, logger logging.Logger) router.Factory {
-	return factory{Config{Engine: http.NewServeMux(),
+	return factory{Config{
+		Engine:         DefaultEngine(),
 		Middlewares:    []HandlerMiddleware{},
 		HandlerFactory: EndpointHandler,
 		ProxyFactory:   pf,
 		Logger:         logger,
+		DebugPattern:   DefaultDebugPattern,
 	}}
 }
 
+// NewFactory returns a net/http mux router factory with the injected configuration
 func NewFactory(cfg Config) router.Factory {
+	if cfg.DebugPattern == "" {
+		cfg.DebugPattern = DefaultDebugPattern
+	}
 	return factory{cfg}
 }
 
@@ -48,7 +71,7 @@ type httpRouter struct {
 
 func (r httpRouter) Run(cfg config.ServiceConfig) {
 	if cfg.Debug {
-		r.cfg.Engine.Handle("/__debug/", DebugHandler(r.cfg.Logger))
+		r.cfg.Engine.Handle(r.cfg.DebugPattern, DebugHandler(r.cfg.Logger))
 	}
 	r.registerEndpoints(cfg.Endpoints)
 
@@ -58,6 +81,7 @@ func (r httpRouter) Run(cfg config.ServiceConfig) {
 	}
 	r.cfg.Logger.Critical(server.ListenAndServe())
 }
+
 func (r httpRouter) registerEndpoints(endpoints []*config.EndpointConfig) {
 	for _, c := range endpoints {
 		proxyStack, err := r.cfg.ProxyFactory.New(c)

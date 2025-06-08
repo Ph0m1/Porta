@@ -51,7 +51,7 @@ func main() {
 	})
 
 	routerFactory := mux.NewFactory(mux.Config{
-		Engine:         http.NewServeMux(),
+		Engine:         mux.DefaultEngine(),
 		ProxyFactory:   proxy.DefaultFactory(logger),
 		Middlewares:    []mux.HandlerMiddleware{secureMiddleware},
 		Logger:         logger,

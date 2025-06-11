@@ -18,7 +18,7 @@ func main() {
 	port := flag.Int("p", 0, "Port of the service")
 	logLevel := flag.String("l", "ERROR", "Logging level")
 	debug := flag.Bool("d", false, "Enable the debug")
-	configFile := flag.String("c", "configuration.json", "Path to configuration filename")
+	configFile := flag.String("c", "../etc/configuration.json", "Path to configuration filename")
 	flag.Parse()
 
 	parser := viper.New()

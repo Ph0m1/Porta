@@ -8,8 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ph0m1/p_gateway/encoding"
+	"github.com/ph0m1/porta/encoding"
 )
+
+const (
+	BracketsRouterPatternBuilder = iota
+	ColonRouterPatternBuilder
+)
+
+var RoutingPattern = ColonRouterPatternBuilder
 
 // ServiceConfig defines the service
 type ServiceConfig struct {
@@ -226,8 +233,11 @@ func (s *ServiceConfig) cleanPath(path string) string {
 
 func (s *ServiceConfig) getEndpointPath(path string, params []string) string {
 	result := path
-	for p := range params {
-		result = strings.Replace(result, "/{"+params[p]+"}", "/:"+params[p], -1)
+
+	if RoutingPattern == ColonRouterPatternBuilder {
+		for p := range params {
+			result = strings.Replace(result, "/{"+params[p]+"}", "/:"+params[p], -1)
+		}
 	}
 	return result
 }

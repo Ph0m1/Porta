@@ -11,12 +11,12 @@ import (
 	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/contrib/secure"
 
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/config/viper"
-	"github.com/ph0m1/p_gateway/logging"
-	"github.com/ph0m1/p_gateway/logging/gologging"
-	"github.com/ph0m1/p_gateway/proxy"
-	pgin "github.com/ph0m1/p_gateway/router/gin"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/config/viper"
+	"github.com/ph0m1/porta/logging"
+	"github.com/ph0m1/porta/logging/gologging"
+	"github.com/ph0m1/porta/proxy"
+	pgin "github.com/ph0m1/porta/router/gin"
 )
 
 func main() {

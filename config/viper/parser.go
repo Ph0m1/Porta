@@ -4,7 +4,7 @@ package viper
 import (
 	"fmt"
 
-	"github.com/ph0m1/p_gateway/config"
+	"github.com/ph0m1/porta/config"
 	"github.com/spf13/viper"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ph0m1/p_gateway/logging"
+	"github.com/ph0m1/porta/logging"
 )
 
 func NewLoggingMiddleware(logger logging.Logger, name string) Middleware {

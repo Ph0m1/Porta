@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/logging"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/logging"
 )
 
 type Factory interface {

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/logging/gologging"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/logging/gologging"
 )
 
 func TestNewDefautFactory(t *testing.T) {

@@ -3,7 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
-	"github.com/ph0m1/p_gateway/config"
+	"github.com/ph0m1/porta/config"
 )
 
 // Response is the entity returned by the proxy

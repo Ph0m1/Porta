@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ph0m1/p_gateway/config"
+	"github.com/ph0m1/porta/config"
 )
 
 var errNullResult = errors.New("invalid response")

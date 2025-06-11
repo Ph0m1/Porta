@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/sd"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/sd"
 )
 
 func NewRoundRobinLoadBalancedMiddleware(remote *config.Backend) Middleware {

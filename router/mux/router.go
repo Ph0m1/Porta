@@ -2,10 +2,10 @@ package mux
 
 import (
 	"fmt"
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/logging"
-	"github.com/ph0m1/p_gateway/proxy"
-	"github.com/ph0m1/p_gateway/router"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/logging"
+	"github.com/ph0m1/porta/proxy"
+	"github.com/ph0m1/porta/router"
 	"net/http"
 )
 

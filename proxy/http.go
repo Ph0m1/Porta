@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/encoding"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/encoding"
 )
 
 var ErrInvalidStatusCode = errors.New("Invalid status code")

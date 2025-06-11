@@ -7,7 +7,7 @@ import (
 
 	gologging "github.com/op/go-logging"
 
-	"github.com/ph0m1/p_gateway/logging"
+	"github.com/ph0m1/porta/logging"
 )
 
 func NewLogger(level string, out io.Writer, prefix string) (logging.Logger, error) {

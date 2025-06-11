@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/ph0m1/p_gateway/config"
-	"github.com/ph0m1/p_gateway/proxy"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/proxy"
 )
 
 var ErrInternalError = errors.New("internal server error")

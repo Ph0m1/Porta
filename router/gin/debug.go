@@ -2,7 +2,7 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ph0m1/p_gateway/logging"
+	"github.com/ph0m1/porta/logging"
 	"io/ioutil"
 )
 

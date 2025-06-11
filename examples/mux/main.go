@@ -8,10 +8,10 @@ import (
 
 	"gopkg.in/unrolled/secure.v1"
 
-	"github.com/ph0m1/p_gateway/config/viper"
-	"github.com/ph0m1/p_gateway/logging/gologging"
-	"github.com/ph0m1/p_gateway/proxy"
-	"github.com/ph0m1/p_gateway/router/mux"
+	"github.com/ph0m1/porta/config/viper"
+	"github.com/ph0m1/porta/logging/gologging"
+	"github.com/ph0m1/porta/proxy"
+	"github.com/ph0m1/porta/router/mux"
 )
 
 func main() {

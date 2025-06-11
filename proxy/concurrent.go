@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"github.com/ph0m1/p_gateway/config"
+	"github.com/ph0m1/porta/config"
 	"time"
 )
 

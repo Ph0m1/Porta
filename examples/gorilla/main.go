@@ -5,14 +5,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	gorilla "github.com/gorilla/mux"
 	"gopkg.in/unrolled/secure.v1"
 
-	"github.com/ph0m1/p_gateway/config/viper"
-	"github.com/ph0m1/p_gateway/logging/gologging"
-	"github.com/ph0m1/p_gateway/proxy"
-	"github.com/ph0m1/p_gateway/router/mux"
+	"github.com/ph0m1/porta/config"
+	"github.com/ph0m1/porta/config/viper"
+	"github.com/ph0m1/porta/logging"
+	"github.com/ph0m1/porta/logging/gologging"
+	"github.com/ph0m1/porta/proxy"
+	"github.com/ph0m1/porta/router/mux"
 )
 
 func main() {
@@ -23,6 +26,7 @@ func main() {
 	flag.Parse()
 
 	parser := viper.New()
+	config.RoutingPattern = config.BracketsRouterPatternBuilder
 	serviceConfig, err := parser.Parse(*configFile)
 	if err != nil {
 		log.Fatal("ERROR:", err.Error())
@@ -35,41 +39,66 @@ func main() {
 	logger, err := gologging.NewLogger(*logLevel, os.Stdout, "[PORTA]")
 	if err != nil {
 		log.Fatal("ERROR:", err.Error())
-
-		secureMiddleware := secure.New(secure.Options{
-			AllowedHosts:          []string{"127.0.0.1:8080", "example.com", "ssl.example.com"},
-			STSSeconds:            315360000,
-			STSIncludeSubdomains:  true,
-			STSPreload:            true,
-			FrameDeny:             true,
-			ContentTypeNosniff:    true,
-			BrowserXssFilter:      true,
-			ContentSecurityPolicy: "default-src 'self'",
-		})
-
-		routerFactory := mux.NewFactory(mux.Config{
-			Engine:       gorillaEngine{gorilla.NewRouter()},
-			ProxyFactory: proxy.DefaultFactory(logger),
-			Middlewares:    []mux.HandlerMiddleware{secureMiddleware},Add commentMore actions
-			Logger:         logger,
-			HandlerFactory: mux.EndpointHandler,
-			DebugPattern:   "/__debug/{params}",
-		})
-
-		routerFactory.New().Run(serviceConfig)
 	}
+	secureMiddleware := secure.New(secure.Options{
+		AllowedHosts:          []string{"127.0.0.1:8080", "example.com", "ssl.example.com"},
+		SSLRedirect:           false,
+		SSLHost:               "ssl.example.com",
+		SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
+		STSSeconds:            315360000,
+		STSIncludeSubdomains:  true,
+		STSPreload:            true,
+		FrameDeny:             true,
+		ContentTypeNosniff:    true,
+		BrowserXssFilter:      true,
+		ContentSecurityPolicy: "default-src 'self'",
+	})
 
-	type gorillaEngine struct {
-		r *gorilla.Router
-	}
+	routerFactory := mux.NewFactory(mux.Config{
+		Engine: gorillaEngine{gorilla.NewRouter()},
+		//ProxyFactory: proxy.DefaultFactory(logger),
+		ProxyFactory:   customProxyFactory{logger, proxy.DefaultFactory(logger)},
+		Middlewares:    []mux.HandlerMiddleware{secureMiddleware},
+		Logger:         logger,
+		HandlerFactory: mux.CustomEndpointHandler(mux.NewRequestBuilder(gorillaParamsExtractor)),
+		DebugPattern:   "/__debug/{params}",
+	})
 
-	// Handle implements the mux.Engine interface from the krakend router package
-	func (g gorillaEngine) Handle(pattern string, handler http.Handler) {
-		g.r.Handle(pattern, handler)
-	}
+	routerFactory.New().Run(serviceConfig)
+}
 
-	// ServeHTTP implements the http:Handler interface from the stdlib
-	func (g gorillaEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-		g.r.ServeHTTP(w, r)
+func gorillaParamsExtractor(r *http.Request) map[string]string {
+	params := map[string]string{}
+	for key, value := range gorilla.Vars(r) {
+		params[strings.Title(key)] = value
 	}
+	return params
+}
+
+type gorillaEngine struct {
+	r *gorilla.Router
+}
+
+// Handle implements the mux.Engine interface from the krakend router package
+func (g gorillaEngine) Handle(pattern string, handler http.Handler) {
+	g.r.Handle(pattern, handler)
+}
+
+// ServeHTTP implements the http:Handler interface from the stdlib
+func (g gorillaEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	g.r.ServeHTTP(w, r)
+}
+
+type customProxyFactory struct {
+	logger  logging.Logger
+	factory proxy.Factory
+}
+
+// New implements the Factory interface
+func (cf customProxyFactory) New(cfg *config.EndpointConfig) (p proxy.Proxy, err error) {
+	p, err = cf.factory.New(cfg)
+	if err != nil {
+		p = proxy.NewLoggingMiddleware(cf.logger, cfg.Endpoint)(p)
+	}
+	return
 }

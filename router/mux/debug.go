@@ -2,9 +2,10 @@ package mux
 
 import (
 	"encoding/json"
-	"github.com/ph0m1/p_gateway/logging"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/ph0m1/porta/logging"
 )
 
 func DebugHandler(logger logging.Logger) http.HandlerFunc {

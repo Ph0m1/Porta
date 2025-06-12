@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"log"
-	"net/http"
 	"os"
-	"strings"
 
-	gorilla "github.com/gorilla/mux"
+	"github.com/ph0m1/porta/router/mux"
 	"gopkg.in/unrolled/secure.v1"
 
 	"github.com/ph0m1/porta/config"
@@ -15,7 +13,7 @@ import (
 	"github.com/ph0m1/porta/logging"
 	"github.com/ph0m1/porta/logging/gologging"
 	"github.com/ph0m1/porta/proxy"
-	"github.com/ph0m1/porta/router/mux"
+	"github.com/ph0m1/porta/router/gorilla"
 )
 
 func main() {
@@ -54,39 +52,10 @@ func main() {
 		ContentSecurityPolicy: "default-src 'self'",
 	})
 
-	routerFactory := mux.NewFactory(mux.Config{
-		Engine: gorillaEngine{gorilla.NewRouter()},
-		//ProxyFactory: proxy.DefaultFactory(logger),
-		ProxyFactory:   customProxyFactory{logger, proxy.DefaultFactory(logger)},
-		Middlewares:    []mux.HandlerMiddleware{secureMiddleware},
-		Logger:         logger,
-		HandlerFactory: mux.CustomEndpointHandler(mux.NewRequestBuilder(gorillaParamsExtractor)),
-		DebugPattern:   "/__debug/{params}",
-	})
-
+	cfg := gorilla.DefaultConfig(customProxyFactory{logger: logger, factory: proxy.DefaultFactory(logger)}, logger)
+	cfg.Middlewares = append(cfg.Middlewares, secureMiddleware)
+	routerFactory := mux.NewFactory(cfg)
 	routerFactory.New().Run(serviceConfig)
-}
-
-func gorillaParamsExtractor(r *http.Request) map[string]string {
-	params := map[string]string{}
-	for key, value := range gorilla.Vars(r) {
-		params[strings.Title(key)] = value
-	}
-	return params
-}
-
-type gorillaEngine struct {
-	r *gorilla.Router
-}
-
-// Handle implements the mux.Engine interface from the krakend router package
-func (g gorillaEngine) Handle(pattern string, handler http.Handler) {
-	g.r.Handle(pattern, handler)
-}
-
-// ServeHTTP implements the http:Handler interface from the stdlib
-func (g gorillaEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.r.ServeHTTP(w, r)
 }
 
 type customProxyFactory struct {

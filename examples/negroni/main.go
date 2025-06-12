@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	//"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/negroni"
+	"github.com/zbindenren/negroni-prometheus"
 	"gopkg.in/unrolled/secure.v1"
 
 	"github.com/ph0m1/porta/config/viper"
@@ -66,6 +69,9 @@ func newNegroniEngine() negroniEngine {
 	negroniRouter := negroni.Classic()
 	negroniRouter.UseHandler(muxEngine)
 
+	m := negroniprometheus.NewMiddleware("serviceName")
+	muxEngine.Handle("/__metrics", promhttp.Handler())
+	negroniRouter.Use(m)
 	return negroniEngine{muxEngine, negroniRouter}
 }
 

@@ -16,7 +16,17 @@ const (
 	ColonRouterPatternBuilder
 )
 
+const (
+	GET    string = "GET"
+	POST   string = "POST"
+	PUT    string = "PUT"
+	DELETE string = "DELETE"
+	NONE   string = ""
+)
+
 var RoutingPattern = ColonRouterPatternBuilder
+
+type HTTPMethod string
 
 // ServiceConfig defines the service
 type ServiceConfig struct {
@@ -141,8 +151,8 @@ func (s *ServiceConfig) extractPlaceHoldersFromURLTemplate(subject string, patte
 
 func (s *ServiceConfig) initEndpointDefaults(e int) {
 	endpoint := s.Endpoints[e]
-	if endpoint.Method == "" {
-		endpoint.Method = "GET"
+	if endpoint.Method == NONE {
+		endpoint.Method = GET
 	} else {
 		endpoint.Method = strings.ToTitle(endpoint.Method)
 	}
@@ -165,7 +175,7 @@ func (s *ServiceConfig) initBackendDefaults(e, b int) {
 	} else {
 		backend.Host = s.cleanHosts(backend.Host)
 	}
-	if backend.Method == "" {
+	if backend.Method == NONE {
 		backend.Method = endpoint.Method
 	}
 	backend.Timeout = endpoint.Timeout
@@ -174,8 +184,15 @@ func (s *ServiceConfig) initBackendDefaults(e, b int) {
 	switch strings.ToLower(backend.Encoding) {
 	case "xml":
 		backend.Decoder = encoding.XMLDecoder
-	default:
+	case "json":
 		backend.Decoder = encoding.JSONDecoder
+	case "toml":
+		backend.Decoder = encoding.TOMLDecoder
+	case "yaml":
+		backend.Decoder = encoding.YAMLDecoder
+
+	default:
+		backend.Decoder = encoding.YAMLDecoder
 	}
 }
 

@@ -1,0 +1,76 @@
+version = 1
+name = "My lovely gateway"
+port = 8080
+timeout = 10
+cache_ttl = 3600
+
+host = [
+    "http://127.0.0.1:8080",
+    "http://127.0.0.2:8000",
+    "http://127.0.0.3:9000",
+    "http://127.0.0.4"
+]
+
+[[endpoints]]
+endpoint = "/users/{user}"
+method = "GET"
+concurrent_calls = 2
+timeout = 1000
+cache_ttl = 3600
+querystring_params = ["page", "limit"]
+
+[[endpoints.backend]]
+host = ["http://127.0.0.3:9000", "http://127.0.0.4"]
+url_pattern = "/registered/{user}"
+whitelist = ["some", "what"]
+
+[endpoints.backend.mapping]
+email = "personal_email"
+
+[[endpoints.backend]]
+host = ["http://127.0.0.1:8080"]
+url_pattern = "/users/{user}/permissions"
+blacklist = ["spam2", "notwanted2"]
+
+[[endpoints]]
+endpoint = "/foo/bar"
+method = "POST"
+concurrent_calls = 1
+timeout = 10000
+cache_ttl = 3600
+
+[[endpoints.backend]]
+host = ["https://127.0.0.1:8081"]
+url_pattern = "/__debug/tupu"
+
+[[endpoints]]
+endpoint = "/github"
+method = "GET"
+concurrent_calls = 2
+timeout = 1000
+cache_ttl = 3600
+
+[[endpoints.backend]]
+host = ["https://api.github.com"]
+url_pattern = "/"
+whitelist = ["authorizations_url", "code_search_url"]
+
+[[endpoints]]
+endpoint = "/combination/{id}/{supu}"
+method = "GET"
+concurrent_calls = 3
+timeout = 4000
+querystring_params = ["page", "limit"]
+
+[[endpoints.backend]]
+group = "first_post"
+host = ["https://jsonplaceholder.typicode.com"]
+url_pattern = "/posts/{id}?supu={supu}"
+blacklist = ["userId"]
+
+[[endpoints.backend]]
+host = ["https://jsonplaceholder.typicode.com"]
+url_pattern = "/users/{id}"
+
+[endpoints.backend.mapping]
+email = "personal_email"

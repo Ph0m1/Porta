@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/gin-gonic/gin"
 	"log"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/aviddiviner/gin-limit"
 	"github.com/gin-gonic/contrib/cache"
@@ -23,7 +24,7 @@ func main() {
 	port := flag.Int("p", 0, "Port of the service")
 	logLevel := flag.String("l", "ERROR", "Logging level")
 	debug := flag.Bool("d", true, "Enable the debug")
-	configFile := flag.String("c", "../etc/configuration.json", "Path to the configuration filename")
+	configFile := flag.String("c", "../etc/config.yaml", "Path to the configuration filename")
 	flag.Parse()
 
 	parser := viper.New()

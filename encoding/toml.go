@@ -7,12 +7,12 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-func TOMLDecoder(r io.Reader, v *map[string]interface{}) error {
-	_, err := toml.NewDecoder(r).Decode(v)
-	return err
-}
+//func TOMLDecoder(r io.Reader, v *map[string]interface{}) error {
+//	_, err := toml.NewDecoder(r).Decode(v)
+//	return err
+//}
 
-func TOMLDecoderStrict(r io.Reader, v *map[string]interface{}) error {
+func TOMLDecoder(r io.Reader, v *map[string]interface{}) error {
 	md, err := toml.NewDecoder(r).Decode(v)
 	if err != nil {
 		return err

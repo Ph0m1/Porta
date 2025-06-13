@@ -1,8 +1,9 @@
 package encoding
 
 import (
-	"github.com/go-yaml/yaml"
 	"io"
+
+	"github.com/go-yaml/yaml"
 )
 
 func YAMLDecoder(r io.Reader, v *map[string]interface{}) error {

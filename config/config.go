@@ -190,7 +190,6 @@ func (s *ServiceConfig) initBackendDefaults(e, b int) {
 		backend.Decoder = encoding.TOMLDecoder
 	case "yaml":
 		backend.Decoder = encoding.YAMLDecoder
-
 	default:
 		backend.Decoder = encoding.YAMLDecoder
 	}

@@ -101,6 +101,7 @@ var (
 	endpointURLKeysPattern = regexp.MustCompile(`/\{([a-zA-Z\-_0-9]+)\}`)
 	errInvalidHost         = errors.New("invalid host")
 	hostPattern            = regexp.MustCompile(`(https?://)?([a-zA-Z0-9\._\-]+)(:[0-9]{2,6})?/?`)
+	debugPattern           = "^[^/]|/__debug(/.*)?$"
 	defaultPort            = 8080
 )
 
@@ -259,7 +260,7 @@ func (s *ServiceConfig) getEndpointPath(path string, params []string) string {
 }
 
 func (e *EndpointConfig) validate() error {
-	matched, err := regexp.MatchString("^[^/]|/__debug(/.*)?$", e.Endpoint)
+	matched, err := regexp.MatchString(debugPattern, e.Endpoint)
 	if err != nil {
 		log.Printf("ERROR: parsing the endpoint url [%s]: %s. Ignoring\n", e.Endpoint, err.Error())
 		return err

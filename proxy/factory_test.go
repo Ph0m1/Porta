@@ -2,17 +2,32 @@ package proxy
 
 import (
 	"bytes"
-	"golang.org/x/net/context"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/ph0m1/porta/config"
 	"github.com/ph0m1/porta/logging/gologging"
 )
 
-func TestNewDefautFactory(t *testing.T) {
+func TestDefaultFactory_noBackends(t *testing.T) {
+	buff := bytes.NewBuffer(make([]byte, 1024))
+	logger, err := gologging.NewLogger("ERROR", buff, "pref")
+	if err != nil {
+		t.Error("building the logger: ", err.Error())
+		return
+	}
+	factory := DefaultFactory(logger)
+
+	if _, err := factory.New(&config.EndpointConfig{}); err != ErrNoBackends {
+		t.Errorf("Expecting ErrNoBackends. Got: %v\n", err)
+	}
+}
+
+func TestNewDefautFactory_ok(t *testing.T) {
 	buff := bytes.NewBuffer(make([]byte, 1024))
 	logger, err := gologging.NewLogger("ERROR", buff, "pref")
 	if err != nil {
@@ -62,10 +77,6 @@ func TestNewDefautFactory(t *testing.T) {
 		ConcurrentCalls: 3,
 	}
 
-	endpointEmpty := config.EndpointConfig{
-		Backend:         []*config.Backend{},
-		ConcurrentCalls: 3,
-	}
 	serviceConfig := config.ServiceConfig{
 		Version:   1,
 		Endpoints: []*config.EndpointConfig{&endpointSingle, &endpointMulti},
@@ -99,10 +110,5 @@ func TestNewDefautFactory(t *testing.T) {
 	}
 	if !response.IsComplete || len(response.Data) != len(expectedResponse.Data) {
 		t.Errorf("The proxy middleware propagated an unexpected error: %v\n", response)
-	}
-
-	_, err = factory.New(&endpointEmpty)
-	if err != ErrNoBackends {
-		t.Errorf("The factory returned an unexpected error: %s\n", err.Error())
 	}
 }

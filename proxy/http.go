@@ -9,6 +9,8 @@ import (
 	"github.com/ph0m1/porta/encoding"
 )
 
+// ErrInvalidStatusCode is the error returned by the http proxy when the
+// received status code of the response is not 200 or 201
 var ErrInvalidStatusCode = errors.New("Invalid status code")
 
 // creates http client based with the received context

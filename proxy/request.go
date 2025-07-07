@@ -6,6 +6,7 @@ import (
 	"net/url"
 )
 
+// Request represents a request to be proxied
 type Request struct {
 	Method  string
 	URL     *url.URL

@@ -8,8 +8,10 @@ import (
 	"github.com/ph0m1/porta/config"
 )
 
+// when return nil, it means that the backend is not available
 var errNullResult = errors.New("invalid response")
 
+// ErrNoBackends is returned when there are no backends
 func NewMergeDataMiddleware(endpointConfig *config.EndpointConfig) Middleware {
 	totalBackends := len(endpointConfig.Backend)
 	if totalBackends == 0 {

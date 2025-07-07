@@ -61,7 +61,7 @@ func main() {
 		}),
 		limit.MaxAllowed(20),
 	}
-
+	// routerFactory := gin.DefaultFactory(proxy.DefaultFactory(logger), logger)
 	routerFactory := pgin.NewFactory(pgin.Config{
 		Engine:       gin.Default(),
 		ProxyFactory: customProxyFactory{logger, proxy.DefaultFactory(logger)},

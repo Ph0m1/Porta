@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/ph0m1/porta/config"
@@ -16,7 +17,15 @@ var ErrInvalidStatusCode = errors.New("Invalid status code")
 // creates http client based with the received context
 type HTTPClientFactory func(ctx context.Context) *http.Client
 
-func NewHttpClient(_ context.Context) *http.Client { return http.DefaultClient }
+func NewHttpClient(_ context.Context) *http.Client {
+	// 创建一个不使用代理的 HTTP 客户端
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: nil, // 禁用代理
+		},
+	}
+	return client
+}
 
 func httpProxy(backend *config.Backend) Proxy {
 	return NewHttpProxy(backend, NewHttpClient, backend.Decoder)
@@ -57,7 +66,12 @@ func NewHttpProxy(remote *config.Backend, clientFactory HTTPClientFactory, decod
 		if err != nil {
 			return nil, err
 		}
-		if resp.StatusCode != http.StatusCreated {
+		// 添加调试信息
+		fmt.Printf("[DEBUG] Backend response status: %d\n", resp.StatusCode)
+		fmt.Printf("[DEBUG] Backend response headers: %v\n", resp.Header)
+
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+			fmt.Printf("[DEBUG] Invalid status code: %d\n", resp.StatusCode)
 			return nil, ErrInvalidStatusCode
 		}
 		var data map[string]interface{}

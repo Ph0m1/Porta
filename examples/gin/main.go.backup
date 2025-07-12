@@ -8,8 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	limit "github.com/aviddiviner/gin-limit"
+	"github.com/aviddiviner/gin-limit"
 	"github.com/gin-gonic/contrib/cache"
+	"github.com/gin-gonic/contrib/secure"
 
 	"github.com/ph0m1/porta/config"
 	"github.com/ph0m1/porta/config/viper"
@@ -46,19 +47,18 @@ func main() {
 	store := cache.NewInMemoryStore(time.Minute)
 
 	mws := []gin.HandlerFunc{
-		// 暂时注释掉 secure 中间件来测试
-		// secure.Secure(secure.Options{
-		// 	AllowedHosts:          []string{"127.0.0.1:8080", "example.com", "ssl.example.com"},
-		// 	SSLRedirect:           false,
-		// 	SSLHost:               "ssl.example.com",
-		// 	SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
-		// 	STSSeconds:            315360000,
-		// 	STSIncludeSubdomains:  true,
-		// 	FrameDeny:             true,
-		// 	ContentTypeNosniff:    true,
-		// 	BrowserXssFilter:      true,
-		// 	ContentSecurityPolicy: "default-src 'self'",
-		// }),
+		secure.Secure(secure.Options{
+			AllowedHosts:          []string{"127.0.0.1:8080", "example.com", "ssl.example.com"},
+			SSLRedirect:           false,
+			SSLHost:               "ssl.example.com",
+			SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
+			STSSeconds:            315360000,
+			STSIncludeSubdomains:  true,
+			FrameDeny:             true,
+			ContentTypeNosniff:    true,
+			BrowserXssFilter:      true,
+			ContentSecurityPolicy: "default-src 'self'",
+		}),
 		limit.MaxAllowed(20),
 	}
 	// routerFactory := gin.DefaultFactory(proxy.DefaultFactory(logger), logger)
@@ -81,7 +81,9 @@ type customProxyFactory struct {
 }
 
 func (cf customProxyFactory) New(cfg *config.EndpointConfig) (p proxy.Proxy, err error) {
-	// 直接使用默认工厂创建代理，避免重复添加中间件
 	p, err = cf.factory.New(cfg)
+	if err == nil {
+		p = proxy.NewLoggingMiddleware(cf.logger, cfg.Endpoint)(p)
+	}
 	return
 }

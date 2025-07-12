@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Porta Gateway
+  porta-gateway:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - GO111MODULE=on
+      - http_proxy=
+      - https_proxy=
+      - ftp_proxy=
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - FTP_PROXY=
+      - no_proxy=*
+      - NO_PROXY=*
+    volumes:
+      - ./examples/etc/config.yaml:/app/config/config.yaml:ro
+    depends_on:
+      - backend-service-1
+      - backend-service-2
+      - prometheus
+    networks:
+      - porta-network
+    restart: unless-stopped
+    command: sh -c "unset http_proxy https_proxy ftp_proxy HTTP_PROXY HTTPS_PROXY FTP_PROXY && ./porta -c ./config/config.yaml -p 8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/__health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Mock Backend Service 1 - JSON API server
+  backend-service-1:
+    image: httpd:alpine
+    ports:
+      - "8081:80"
+    environment:
+      - HTTPD_PREFIX=/usr/local/apache2
+    networks:
+      - porta-network
+    restart: unless-stopped
+    command: >
+      sh -c "echo '{\"message\": \"Hello from Backend Service 1\", \"service\": \"backend-1\", \"status\": \"ok\"}' > /usr/local/apache2/htdocs/index.html &&
+             httpd-foreground"
+
+  # Mock Backend Service 2 - JSON API server  
+  backend-service-2:
+    image: httpd:alpine
+    ports:
+      - "8082:80"
+    environment:
+      - HTTPD_PREFIX=/usr/local/apache2
+    networks:
+      - porta-network
+    restart: unless-stopped
+    command: >
+      sh -c "echo '{\"message\": \"Hello from Backend Service 2\", \"service\": \"backend-2\", \"status\": \"ok\"}' > /usr/local/apache2/htdocs/index.html &&
+             httpd-foreground"
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - porta-network
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - porta-network
+    restart: unless-stopped
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - porta-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  redis-data:
+
+networks:
+  porta-network:
+    driver: bridge 

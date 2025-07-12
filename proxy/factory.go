@@ -55,6 +55,5 @@ func (pf defaultFactory) newStack(backend *config.Backend) (p Proxy) {
 	if backend.ConcurrentCalls > 1 {
 		p = NewConcurrentMiddleware(backend)(p)
 	}
-	p = NewConcurrentMiddleware(backend)(p)
 	return
 }

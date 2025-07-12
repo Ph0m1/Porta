@@ -1,0 +1,114 @@
+groups:
+  - name: porta_gateway_alerts
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(porta_requests_total{status_code=~"5.."}[5m]) / rate(porta_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for endpoint {{ $labels.endpoint }}"
+
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(porta_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for endpoint {{ $labels.endpoint }}"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: porta_memory_usage_bytes{type="alloc"} > 1073741824  # 1GB
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizeBytes }}"
+
+      # High goroutine count
+      - alert: HighGoroutineCount
+        expr: porta_goroutines_count > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High goroutine count"
+          description: "Goroutine count is {{ $value }}"
+
+      # Backend service down
+      - alert: BackendServiceDown
+        expr: porta_backend_errors_total{error_type="connection_error"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend {{ $labels.backend }} is experiencing connection errors"
+
+      # Rate limit threshold reached
+      - alert: RateLimitThresholdReached
+        expr: rate(porta_rate_limit_blocks_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limit threshold reached"
+          description: "Rate limiting is blocking {{ $value }} requests per second for {{ $labels.endpoint }}"
+
+      # Circuit breaker open
+      - alert: CircuitBreakerOpen
+        expr: porta_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker is open"
+          description: "Circuit breaker for backend {{ $labels.backend }} is open"
+
+      # Low request rate (possible service issue)
+      - alert: LowRequestRate
+        expr: rate(porta_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low request rate"
+          description: "Request rate is {{ $value }} requests per second, which is unusually low"
+
+      # Gateway instance down
+      - alert: GatewayInstanceDown
+        expr: up{job="porta-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gateway instance is down"
+          description: "Porta Gateway instance {{ $labels.instance }} is down"
+
+  - name: system_alerts
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: porta_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      # Disk space low (if available)
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low"
+          description: "Disk space is {{ $value }}% available on {{ $labels.device }}" 

@@ -2,8 +2,9 @@ package proxy
 
 import (
 	"context"
-	"github.com/ph0m1/porta/config"
 	"time"
+
+	"github.com/ph0m1/porta/config"
 )
 
 func NewConcurrentMiddleware(remote *config.Backend) Middleware {

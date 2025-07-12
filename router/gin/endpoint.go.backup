@@ -28,11 +28,7 @@ func EndpointHandler(cfg *config.EndpointConfig, proxy proxy.Proxy) gin.HandlerF
 
 		response, err := proxy(requestCtx, NewRequest(c, cfg.QueryString))
 		if err != nil {
-			// 添加详细的错误日志
-			fmt.Printf("[DEBUG] Proxy error: %v\n", err)
-			fmt.Printf("[DEBUG] Error type: %T\n", err)
-			fmt.Printf("[DEBUG] Error string: %s\n", err.Error())
-			c.String(http.StatusInternalServerError, err.Error())
+			c.AbortWithError(http.StatusInternalServerError, err)
 			cancel()
 			return
 		}
@@ -85,7 +81,6 @@ func NewRequest(c *gin.Context, queryString []string) *proxy.Request {
 
 	return &proxy.Request{
 		Method:  c.Request.Method,
-		URL:     c.Request.URL,
 		Query:   query,
 		Body:    c.Request.Body,
 		Params:  params,
